@@ -1,6 +1,5 @@
 import os
 import sys
-from datetime import time
 import time
 import logging
 from http import HTTPStatus
@@ -9,6 +8,8 @@ import requests
 import telegram
 
 from dotenv import load_dotenv
+
+from exceptions import ErrorMassage
 
 load_dotenv()
 
@@ -48,12 +49,11 @@ def send_message(bot, message):
     """Функция send_message() отправляет сообщение в Telegram чат."""
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
-    except Exception as error:
-        logger.error('Ошибка при отправке сообщения в Telegram')
-        raise telegram.error.BadRequest('Ошибка при отправке сообщения в '
-                                        'Telegram')
-    else:
         logger.debug('Сообщение отправлено')
+    except telegram.TelegramError:
+        logger.error('Не получилось отправить сообщение.')
+        raise ErrorMassage('Ошибка при отправке сообщения в '
+                                        'Telegram')
 
 
 def get_api_answer(timestamp):
@@ -73,11 +73,14 @@ def get_api_answer(timestamp):
 
 def check_response(response):
     """Функция check_response() проверяет ответ API."""
-    if 'homeworks' not in response:
-        raise KeyError('В запросе нет ключа "homeworks"')
     if not isinstance(response, dict):
         raise TypeError('Вы не привели данные в нужный формат.')
-    return response['homeworks']
+    if 'homeworks' not in response:
+        raise KeyError('В запросе нет ключа "homeworks"')
+    is_empty_homework = response['homeworks']
+    if not isinstance(is_empty_homework, list):
+        raise TypeError('Список пуст')
+    return is_empty_homework
 
 
 def parse_status(homework):

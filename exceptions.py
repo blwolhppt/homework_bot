@@ -1,0 +1,2 @@
+class ErrorMassage(Exception):
+    pass
