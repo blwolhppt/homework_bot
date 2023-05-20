@@ -35,6 +35,7 @@ logger.setLevel(logging.INFO)
 
 
 def check_tokens():
+    """Функция check_tokens() проверяет доступность переменных окружения."""
     if not PRACTICUM_TOKEN:
         return 'Не передан токен PRACTICUM_TOKEN'
     if not TELEGRAM_TOKEN:
@@ -44,6 +45,7 @@ def check_tokens():
 
 
 def send_message(bot, message):
+    """Функция send_message() отправляет сообщение в Telegram чат."""
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
     except Exception as error:
@@ -55,6 +57,8 @@ def send_message(bot, message):
 
 
 def get_api_answer(timestamp):
+    """Функция get_api_answer() делает запрос к единственному эндпоинту
+    API-сервиса."""
     payload = {'from_date': timestamp}
     try:
         homeworks = requests.get(ENDPOINT, headers=HEADERS,
@@ -68,6 +72,7 @@ def get_api_answer(timestamp):
 
 
 def check_response(response):
+    """Функция check_response() проверяет ответ API."""
     if 'homeworks' not in response:
         raise KeyError('В запросе нет ключа "homeworks"')
     if not isinstance(response, dict):
@@ -76,6 +81,8 @@ def check_response(response):
 
 
 def parse_status(homework):
+    """Функция parse_status() извлекает из информации о конкретной домашней
+    работе статус этой работы. """
     homework_name = homework.get('homework_name')
     if not homework_name:
         raise KeyError('В запросе нет ключа "homework_name"')
