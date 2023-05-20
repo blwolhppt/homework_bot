@@ -3,6 +3,7 @@ import sys
 from datetime import time
 import time
 import logging
+from http import HTTPStatus
 
 import requests
 import telegram
@@ -25,10 +26,14 @@ HOMEWORK_VERDICTS = {
     'rejected': 'Работа проверена: у ревьюера есть замечания.'
 }
 
+logging.basicConfig(
+    level=logging.INFO,
+    filename='main.log',
+    format='%(asctime)s, %(levelname)s, %(message)s')
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
-# Проверяет доступность переменных окружения, которые необходимы для работы
-# программы. Если отсутствует хотя бы одна переменная окружения —
-# продолжать работу бота нет смысла.
+
 def check_tokens():
     if not PRACTICUM_TOKEN:
         return 'Не передан токен PRACTICUM_TOKEN'
@@ -38,27 +43,28 @@ def check_tokens():
         return 'Не передан токен TELEGRAM_CHAT_ID'
 
 
-# Отправляет сообщение в Telegram чат, определяемый переменной окружения
-# TELEGRAM_CHAT_ID. Принимает на вход два параметра:
-# экземпляр класса Bot и строку с текстом сообщения.
-def send_message(bot, message):
-    bot.send_message(TELEGRAM_CHAT_ID, message)
+def send_message(bot, message) -> None:
+    try:
+        logger.debug('Сообщение было отправлено')
+        bot.send_message(TELEGRAM_CHAT_ID, message)
+    except Exception as error:
+        logger.error('Ошибка при отправке сообщения в Telegram')
+        raise 'Ошибка при отправке сообщения в Telegram'
 
 
-# Делает запрос к единственному эндпоинту API-сервиса.
-# В качестве параметра в функцию передается временная метка.
-# В случае успешного запроса должна вернуть ответ API,
-# приведя его из формата JSON к типам данных Python.
 def get_api_answer(timestamp):
-    payload = {'from_date': 1549962000}
-    homeworks = requests.get(ENDPOINT, headers=HEADERS,
-                             params=payload).json()
-    return homeworks
+    payload = {'from_date': timestamp}
+    try:
+        homeworks = requests.get(ENDPOINT, headers=HEADERS,
+                                 params=payload)
+        if homeworks.status_code != HTTPStatus.OK:
+            raise requests.exceptions.HTTPError('Нет доступа.')
+        else:
+            return homeworks.json()
+    except Exception as error:
+        logger.error('Ошибка при запросе к эндпоинту.')
 
 
-# Проверяет ответ API на соответствие документации из урока API сервиса
-# Практикум.Домашка. В качестве параметра функция получает ответ API,
-# приведенный к типам данных Python.
 def check_response(response):
     if 'homeworks' not in response:
         raise KeyError('В запросе нет ключа "homeworks"')
@@ -67,10 +73,6 @@ def check_response(response):
     return response['homeworks']
 
 
-# Извлекает из информации о конкретной домашней работе статус этой работы.
-# В качестве параметра функция получает только один элемент из списка домашних
-# работ. В случае успеха, функция возвращает подготовленную для отправки
-# в Telegram строку, содержащую один из вердиктов словаря HOMEWORK_VERDICTS
 def parse_status(homework):
     homework_name = homework.get('homework_name')
     homework_status = homework.get('status')
@@ -81,6 +83,7 @@ def parse_status(homework):
 def main():
     """Основная логика работы бота."""
     if check_tokens() is not None:
+        logger.critical('Не все токены переданы! Бот упал.')
         sys.exit()
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     timestamp = int(time.time())
@@ -90,9 +93,13 @@ def main():
             if len(response) != 0:
                 message = parse_status(response[0])
                 send_message(bot, message)
+            else:
+                logger.debug('Бот не смог отправить сообщение, так как '
+                             'ничего нового нет')
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
-
+            send_message(bot, message)
+            logger.critical(message)
         finally:
             time.sleep(RETRY_PERIOD)
 
