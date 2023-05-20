@@ -2,14 +2,11 @@ import os
 import sys
 import time
 import logging
-from http import HTTPStatus
 
 import requests
 import telegram
 
 from dotenv import load_dotenv
-
-from exceptions import ErrorMassage
 
 load_dotenv()
 
@@ -32,7 +29,7 @@ logging.basicConfig(
     filename='main.log',
     format='%(asctime)s, %(levelname)s, %(message)s')
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 
 def check_tokens():
@@ -49,11 +46,10 @@ def send_message(bot, message):
     """Функция send_message() отправляет сообщение в Telegram чат."""
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
-        logger.debug('Сообщение отправлено')
-    except telegram.TelegramError:
+        logger.debug('Сообщение отправлено.')
+    except Exception as error:
         logger.error('Не получилось отправить сообщение.')
-        raise ErrorMassage('Ошибка при отправке сообщения в '
-                                        'Telegram')
+        raise Exception('Ошибка при отправлении сообщения.')
 
 
 def get_api_answer(timestamp):
@@ -63,12 +59,12 @@ def get_api_answer(timestamp):
     try:
         homeworks = requests.get(ENDPOINT, headers=HEADERS,
                                  params=payload)
-        if homeworks.status_code != HTTPStatus.OK:
-            raise requests.exceptions.HTTPError('Нет доступа.')
-        else:
-            return homeworks.json()
-    except requests.RequestException:
-        logger.error('Ошибка при запросе к эндпоинту.')
+    except Exception as error:
+        raise Exception('Ошибка при запросе к эндпоинту.')
+    if homeworks.status_code != 200:
+        logger.error('Недоступно')
+        raise requests.exceptions.HTTPError('Нет доступа.')
+    return homeworks.json()
 
 
 def check_response(response):
