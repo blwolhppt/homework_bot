@@ -43,13 +43,15 @@ def check_tokens():
         return 'Не передан токен TELEGRAM_CHAT_ID'
 
 
-def send_message(bot, message) -> None:
+def send_message(bot, message):
     try:
-        logger.debug('Сообщение было отправлено')
         bot.send_message(TELEGRAM_CHAT_ID, message)
     except Exception as error:
         logger.error('Ошибка при отправке сообщения в Telegram')
-        raise 'Ошибка при отправке сообщения в Telegram'
+        raise telegram.error.BadRequest('Ошибка при отправке сообщения в '
+                                        'Telegram')
+    else:
+        logger.debug('Сообщение отправлено')
 
 
 def get_api_answer(timestamp):
@@ -61,7 +63,7 @@ def get_api_answer(timestamp):
             raise requests.exceptions.HTTPError('Нет доступа.')
         else:
             return homeworks.json()
-    except Exception as error:
+    except requests.RequestException:
         logger.error('Ошибка при запросе к эндпоинту.')
 
 
@@ -75,7 +77,13 @@ def check_response(response):
 
 def parse_status(homework):
     homework_name = homework.get('homework_name')
+    if not homework_name:
+        raise KeyError('В запросе нет ключа "homework_name"')
     homework_status = homework.get('status')
+    if not homework_status:
+        raise KeyError('В запросе нет ключа "homework_status"')
+    if homework_status not in HOMEWORK_VERDICTS:
+        raise KeyError('Такого статуса нет в словаре HOMEWORK_VERDICTS')
     verdict = HOMEWORK_VERDICTS[homework_status]
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
@@ -90,16 +98,17 @@ def main():
     while True:
         try:
             response = check_response(get_api_answer(timestamp))
-            if len(response) != 0:
+            if len(response) > 0:
                 message = parse_status(response[0])
                 send_message(bot, message)
+                logger.info('Статус домашки поменялся')
             else:
                 logger.debug('Бот не смог отправить сообщение, так как '
                              'ничего нового нет')
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
-            send_message(bot, message)
-            logger.critical(message)
+            send_message(bot, f'Сбой в работе программы: {error}')
+            logger.error(message)
         finally:
             time.sleep(RETRY_PERIOD)
 
