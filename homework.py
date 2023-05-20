@@ -33,7 +33,7 @@ logger.setLevel(logging.DEBUG)
 
 
 def check_tokens():
-    """Функция check_tokens() проверяет доступность переменных окружения."""
+    """Функция проверяет доступность переменных окружения."""
     if not PRACTICUM_TOKEN:
         return 'Не передан токен PRACTICUM_TOKEN'
     if not TELEGRAM_TOKEN:
@@ -43,23 +43,22 @@ def check_tokens():
 
 
 def send_message(bot, message):
-    """Функция send_message() отправляет сообщение в Telegram чат."""
+    """Функция отправляет сообщение в Telegram чат."""
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
         logger.debug('Сообщение отправлено.')
-    except Exception as error:
+    except Exception:
         logger.error('Не получилось отправить сообщение.')
         raise Exception('Ошибка при отправлении сообщения.')
 
 
 def get_api_answer(timestamp):
-    """Функция get_api_answer() делает запрос к единственному эндпоинту
-    API-сервиса."""
+    """Функция делает запрос к эндпоинту API-сервиса."""
     payload = {'from_date': timestamp}
     try:
         homeworks = requests.get(ENDPOINT, headers=HEADERS,
                                  params=payload)
-    except Exception as error:
+    except Exception:
         raise Exception('Ошибка при запросе к эндпоинту.')
     if homeworks.status_code != 200:
         logger.error('Недоступно')
@@ -68,7 +67,7 @@ def get_api_answer(timestamp):
 
 
 def check_response(response):
-    """Функция check_response() проверяет ответ API."""
+    """Функция проверяет ответ API."""
     if not isinstance(response, dict):
         raise TypeError('Вы не привели данные в нужный формат.')
     if 'homeworks' not in response:
@@ -80,8 +79,7 @@ def check_response(response):
 
 
 def parse_status(homework):
-    """Функция parse_status() извлекает из информации о конкретной домашней
-    работе статус этой работы. """
+    """Функция извлекает статус домашней работы."""
     homework_name = homework.get('homework_name')
     if not homework_name:
         raise KeyError('В запросе нет ключа "homework_name"')
