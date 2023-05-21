@@ -33,7 +33,7 @@ logger.setLevel(logging.DEBUG)
 
 def check_tokens():
     """Функция проверяет доступность переменных окружения."""
-    token_flag = True
+    has_tokens = True
     tokens = {
         'PRACTICUM_TOKEN': PRACTICUM_TOKEN,
         'TELEGRAM_CHAT_ID': TELEGRAM_CHAT_ID,
@@ -41,8 +41,8 @@ def check_tokens():
     for token, value in tokens.items():
         if not value:
             logging.error(f'{token} не найден.')
-            token_flag = False
-    if not token_flag:
+            has_tokens = False
+    if not has_tokens:
         logger.critical('Не все токены переданы! Бот упал.')
         sys.exit()
 
