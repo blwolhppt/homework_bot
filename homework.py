@@ -109,7 +109,7 @@ def main():
             response = get_api_answer(timestamp)
             list_homeworks = check_response(response)
             if list_homeworks:
-                response_homework, *trash_response = list_homeworks
+                response_homework, *_ = list_homeworks
                 message = parse_status(response_homework)
                 send_message(bot, message)
                 logger.info('Статус домашки поменялся')
