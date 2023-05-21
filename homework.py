@@ -39,10 +39,10 @@ def check_tokens():
         'TELEGRAM_CHAT_ID': TELEGRAM_CHAT_ID,
         'TELEGRAM_TOKEN': TELEGRAM_TOKEN}
     for token, value in tokens.items():
-        if value is None:
+        if not value:
             logging.error(f'{token} не найден.')
             token_flag = False
-    if token_flag is False:
+    if not token_flag:
         logger.critical('Не все токены переданы! Бот упал.')
         sys.exit()
 
@@ -85,9 +85,9 @@ def check_response(response):
 
 def parse_status(homework):
     """Функция извлекает статус домашней работы."""
-    for elem in ['status', 'homework_name']:
-        if elem not in homework:
-            raise KeyError(f'В запросе нет ключа {elem}')
+    for key in ['status', 'homework_name']:
+        if key not in homework:
+            raise KeyError(f'В запросе нет ключа {key}')
     homework_name = homework.get('homework_name')
     homework_status = homework.get('status')
     if homework_status not in HOMEWORK_VERDICTS:
