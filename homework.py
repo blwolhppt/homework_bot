@@ -5,7 +5,6 @@ import logging
 
 import requests
 import telegram
-
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -54,7 +53,7 @@ def send_message(bot, message):
 
 def get_api_answer(timestamp):
     """Функция делает запрос к эндпоинту API-сервиса."""
-    payload = {'from_date': timestamp}
+    payload = {'from_date': 1549962000}
     try:
         homeworks = requests.get(ENDPOINT, headers=HEADERS,
                                  params=payload)
@@ -72,10 +71,10 @@ def check_response(response):
         raise TypeError('Вы не привели данные в нужный формат.')
     if 'homeworks' not in response:
         raise KeyError('В запросе нет ключа "homeworks"')
-    is_empty_homework = response['homeworks']
-    if not isinstance(is_empty_homework, list):
+    list_homework = response['homeworks']
+    if not isinstance(list_homework, list):
         raise TypeError('Список пуст')
-    return is_empty_homework
+    return list_homework
 
 
 def parse_status(homework):
@@ -101,9 +100,11 @@ def main():
     timestamp = int(time.time())
     while True:
         try:
-            response = check_response(get_api_answer(timestamp))
-            if len(response) > 0:
-                message = parse_status(response[0])
+            response = get_api_answer(timestamp)
+            list_homeworks = check_response(response)
+            if list_homeworks:
+                response_homework, *trash_response = list_homeworks
+                message = parse_status(response_homework)
                 send_message(bot, message)
                 logger.info('Статус домашки поменялся')
             else:
