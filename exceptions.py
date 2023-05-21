@@ -1,2 +1,0 @@
-class ErrorMassage(Exception):
-    pass
