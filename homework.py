@@ -33,12 +33,16 @@ logger.setLevel(logging.DEBUG)
 
 def check_tokens():
     """Функция проверяет доступность переменных окружения."""
-    if not PRACTICUM_TOKEN:
-        return 'Не передан токен PRACTICUM_TOKEN'
-    if not TELEGRAM_TOKEN:
-        return 'Не передан токен TELEGRAM_TOKEN'
-    if not TELEGRAM_CHAT_ID:
-        return 'Не передан токен TELEGRAM_CHAT_ID'
+    tokens = {
+        'PRACTICUM_TOKEN': PRACTICUM_TOKEN,
+        'TELEGRAM_CHAT_ID': TELEGRAM_CHAT_ID,
+        'TELEGRAM_TOKEN': TELEGRAM_TOKEN}
+    for token, value in tokens.items():
+        if value is None:
+            logging.error(f'{token} не найден.')
+    if not all(tokens.values()):
+        logger.critical('Не все токены переданы! Бот упал.')
+        sys.exit()
 
 
 def send_message(bot, message):
@@ -97,9 +101,7 @@ def parse_status(homework):
 
 def main():
     """Основная логика работы бота."""
-    if check_tokens() is not None:
-        logger.critical('Не все токены переданы! Бот упал.')
-        sys.exit()
+    check_tokens()
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     timestamp = int(time.time())
     while True:
