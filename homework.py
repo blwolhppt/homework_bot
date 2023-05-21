@@ -33,6 +33,7 @@ logger.setLevel(logging.DEBUG)
 
 def check_tokens():
     """Функция проверяет доступность переменных окружения."""
+    token_flag = True
     tokens = {
         'PRACTICUM_TOKEN': PRACTICUM_TOKEN,
         'TELEGRAM_CHAT_ID': TELEGRAM_CHAT_ID,
@@ -40,7 +41,8 @@ def check_tokens():
     for token, value in tokens.items():
         if value is None:
             logging.error(f'{token} не найден.')
-    if not all(tokens.values()):
+            token_flag = False
+    if token_flag is False:
         logger.critical('Не все токены переданы! Бот упал.')
         sys.exit()
 
@@ -73,25 +75,20 @@ def check_response(response):
     """Функция проверяет ответ API."""
     if not isinstance(response, dict):
         raise TypeError('Вы не привели данные в нужный формат.')
-
     if 'homeworks' not in response:
         raise KeyError('В запросе нет ключа "homeworks"')
     list_homework = response['homeworks']
     if not isinstance(list_homework, list):
         raise TypeError('Список пуст')
-    for i in range(len(list_homework)):
-        if 'homework_name' not in list_homework[i]:
-            raise KeyError('В запросе нет ключа "homework_name"')
-        if 'status' not in list_homework[i]:
-            raise KeyError('В запросе нет ключа "status"')
     return list_homework
 
 
 def parse_status(homework):
     """Функция извлекает статус домашней работы."""
+    for elem in ['status', 'homework_name']:
+        if elem not in homework:
+            raise KeyError(f'В запросе нет ключа {elem}')
     homework_name = homework.get('homework_name')
-    if not homework_name:
-        raise KeyError('В запросе нет ключа "homework_name"')
     homework_status = homework.get('status')
     if homework_status not in HOMEWORK_VERDICTS:
         raise KeyError('Такого статуса нет в словаре HOMEWORK_VERDICTS')
