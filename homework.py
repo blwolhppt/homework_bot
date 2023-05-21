@@ -69,11 +69,17 @@ def check_response(response):
     """Функция проверяет ответ API."""
     if not isinstance(response, dict):
         raise TypeError('Вы не привели данные в нужный формат.')
+
     if 'homeworks' not in response:
         raise KeyError('В запросе нет ключа "homeworks"')
     list_homework = response['homeworks']
     if not isinstance(list_homework, list):
         raise TypeError('Список пуст')
+    for i in range(len(list_homework)):
+        if 'homework_name' not in list_homework[i]:
+            raise KeyError('В запросе нет ключа "homework_name"')
+        if 'status' not in list_homework[i]:
+            raise KeyError('В запросе нет ключа "status"')
     return list_homework
 
 
@@ -83,8 +89,6 @@ def parse_status(homework):
     if not homework_name:
         raise KeyError('В запросе нет ключа "homework_name"')
     homework_status = homework.get('status')
-    if not homework_status:
-        raise KeyError('В запросе нет ключа "homework_status"')
     if homework_status not in HOMEWORK_VERDICTS:
         raise KeyError('Такого статуса нет в словаре HOMEWORK_VERDICTS')
     verdict = HOMEWORK_VERDICTS[homework_status]
